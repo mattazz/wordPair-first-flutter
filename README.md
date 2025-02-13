@@ -1,3 +1,4 @@
 # flutter_application_1
 
-A new Flutter project.
+Test project to know flutter better.
+![image](/github_asset/flutter.gif)
