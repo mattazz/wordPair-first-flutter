@@ -2,6 +2,7 @@ import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 void main() {
   runApp(MyApp());
@@ -74,6 +75,9 @@ class _MyHomePageState extends State<MyHomePage> {
       case 3:
         page = CalculatorPage();
         break;
+      case 4:
+        page = CarouselPage();
+        break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -101,6 +105,10 @@ class _MyHomePageState extends State<MyHomePage> {
                   NavigationRailDestination(
                     icon: Icon(Icons.calculate),
                     label: Text('Calculator'),
+                  ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.image),
+                    label: Text('Carousel'),
                   ),
                 ],
                 selectedIndex: selectedIndex,
@@ -245,6 +253,71 @@ class _CalculatorPageState extends State<CalculatorPage> {
           ],
         ),
       ],
+    );
+  }
+}
+
+class CarouselPage extends StatefulWidget {
+  @override
+  _CarouselPageState createState() => _CarouselPageState();
+}
+
+class _CarouselPageState extends State<CarouselPage> {
+  final List<String> imgList = [
+    'assets/shib-1.jpg',
+    'assets/shib-2.jpg',
+    'assets/shib-3.jpg',
+    'assets/shib-4.jpg',
+  ];
+
+  bool _isAutoPlay = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Shibas of the World'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: CarouselSlider(
+                options: CarouselOptions(
+                  height: 400.0,
+                  autoPlay: _isAutoPlay,
+                  autoPlayInterval: Duration(seconds: 3),
+                  enlargeCenterPage: true,
+                ),
+                items: imgList
+                    .map((item) => Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.amber, width: 4),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(5),
+                            child: Image.asset(item,
+                                fit: BoxFit.cover, width: 1000),
+                          ),
+                        ))
+                    .toList(),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isAutoPlay = !_isAutoPlay;
+                });
+              },
+              child: Text(_isAutoPlay ? 'Pause' : 'Resume'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
