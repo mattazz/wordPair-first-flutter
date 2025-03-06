@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'dart:math';
 
 void main() {
   runApp(MyApp());
@@ -78,6 +79,9 @@ class _MyHomePageState extends State<MyHomePage> {
       case 4:
         page = CarouselPage();
         break;
+      case 5:
+        page = HangmanPage();
+        break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -110,6 +114,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     icon: Icon(Icons.image),
                     label: Text('Carousel'),
                   ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.gamepad),
+                    label: Text('Hangman'),
+                  ),
                 ],
                 selectedIndex: selectedIndex,
                 onDestinationSelected: (value) {
@@ -129,6 +137,214 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     });
+  }
+}
+
+class HangmanPage extends StatefulWidget {
+  @override
+  _HangmanPageState createState() => _HangmanPageState();
+}
+
+class _HangmanPageState extends State<HangmanPage> {
+  final List<String> words = [
+    'flutter',
+    'hangman',
+    'dart',
+    'widget',
+    'provider',
+    'carousel',
+    'state',
+    'context',
+    'scaffold',
+    'material',
+    'navigator',
+    'button',
+    'column',
+    'row',
+    'container',
+    'padding',
+    'alignment',
+    'gesture',
+    'animation',
+    'theme',
+    'icon',
+    'text',
+    'image',
+    'network',
+    'asset',
+    'list',
+    'grid',
+    'card',
+    'dialog',
+    'snackbar',
+    'drawer',
+    'sheep',
+    'horse',
+    'dog',
+    'cat',
+    'tiger',
+    'penguin'
+  ];
+  late String selectedWord;
+  late List<String> guessedLetters;
+  int wrongGuesses = 0;
+  final int maxWrongGuesses = 6;
+
+  final List<String> hangmanStages = [
+    '''
+     -----
+     |   |
+         |
+         |
+         |
+         |
+    =========''',
+    '''
+     -----
+     |   |
+     O   |
+         |
+         |
+         |
+    =========''',
+    '''
+     -----
+     |   |
+     O   |
+     |   |
+         |
+         |
+    =========''',
+    '''
+     -----
+     |   |
+     O   |
+    /|   |
+         |
+         |
+    =========''',
+    '''
+     -----
+     |   |
+     O   |
+    /|\\  |
+         |
+         |
+    =========''',
+    '''
+     -----
+     |   |
+     O   |
+    /|\\  |
+    /    |
+         |
+    =========''',
+    '''
+     -----
+     |   |
+     O   |
+    /|\\  |
+    / \\  |
+         |
+    ========='''
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _startNewGame();
+  }
+
+  void _startNewGame() {
+    setState(() {
+      final random = Random();
+      selectedWord = words[random.nextInt(words.length)];
+      guessedLetters = [];
+      wrongGuesses = 0;
+    });
+  }
+
+  void _guessLetter(String letter) {
+    setState(() {
+      if (!selectedWord.contains(letter)) {
+        wrongGuesses++;
+      }
+      guessedLetters.add(letter);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String displayWord = selectedWord.split('').map((letter) {
+      return guessedLetters.contains(letter) ? letter : '_';
+    }).join(' ');
+
+    bool isGameOver = wrongGuesses >= maxWrongGuesses;
+    bool isGameWon = !displayWord.contains('_');
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text('Hangman Game'),
+            Text(
+              'Guess the word by selecting letters',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w300),
+            ),
+          ],
+        ),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              hangmanStages[wrongGuesses],
+              style: TextStyle(fontSize: 18, fontFamily: 'Courier'),
+            ),
+            SizedBox(height: 20),
+            Text(
+              displayWord,
+              style: TextStyle(fontSize: 32, letterSpacing: 2),
+            ),
+            SizedBox(height: 20),
+            Text('Wrong guesses: $wrongGuesses'),
+            Text('Guesses left: ${maxWrongGuesses - wrongGuesses}'),
+            SizedBox(height: 20),
+            if (isGameOver)
+              Text(
+                'Game Over! The word was "$selectedWord".',
+                style: TextStyle(fontSize: 24, color: Colors.red),
+              ),
+            if (isGameWon)
+              Text(
+                'Congratulations! You guessed the word!',
+                style: TextStyle(fontSize: 24, color: Colors.green),
+              ),
+            SizedBox(height: 20),
+            if (isGameOver || isGameWon)
+              ElevatedButton(
+                onPressed: _startNewGame,
+                child: Text('Restart'),
+              ),
+            if (!isGameOver && !isGameWon)
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: 'abcdefghijklmnopqrstuvwxyz'.split('').map((letter) {
+                  return ElevatedButton(
+                    onPressed: guessedLetters.contains(letter)
+                        ? null
+                        : () => _guessLetter(letter),
+                    child: Text(letter),
+                  );
+                }).toList(),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
