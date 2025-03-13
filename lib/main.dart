@@ -1,12 +1,25 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'dart:math';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'dart:io';
+import 'package:http/io_client.dart';
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
   runApp(MyApp());
+}
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -66,22 +79,18 @@ class _MyHomePageState extends State<MyHomePage> {
     switch (selectedIndex) {
       case 0:
         page = GeneratorPage();
-        break;
       case 1:
         page = FavoritesPage();
-        break;
       case 2:
         page = TravelPage();
-        break;
       case 3:
         page = CalculatorPage();
-        break;
       case 4:
         page = CarouselPage();
-        break;
       case 5:
         page = HangmanPage();
-        break;
+      case 6:
+        page = PokemonListPage();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -118,6 +127,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     icon: Icon(Icons.gamepad),
                     label: Text('Hangman'),
                   ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.list),
+                    label: Text('Pokémon List'),
+                  ),
                 ],
                 selectedIndex: selectedIndex,
                 onDestinationSelected: (value) {
@@ -137,6 +150,98 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     });
+  }
+}
+
+class PokemonListPage extends StatefulWidget {
+  @override
+  _PokemonListPageState createState() => _PokemonListPageState();
+}
+
+class _PokemonListPageState extends State<PokemonListPage> {
+  List<dynamic> _pokemonList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPokemonData();
+  }
+
+  // Future<void> _fetchPokemonData() async {
+  //   try {
+  //     final response =
+  //         await http.get(Uri.parse('https://api.pokemontcg.io/v2/cards'));
+  //     if (response.statusCode == 200) {
+  //       print('Response Body: ${response.body}');
+  //       final data = json.decode(response.body);
+  //       setState(() {
+  //         _pokemonList = data['data'];
+  //       });
+  //     } else {
+  //       throw Exception(
+  //           'Failed to load Pokémon data: Status ${response.statusCode}');
+  //     }
+  //   } catch (e, stackTrace) {
+  //     print('Error fetching Pokémon data: $e');
+  //     print('Stack trace: $stackTrace');
+  //     setState(() {
+  //       _pokemonList = [];
+  //     });
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Error fetching Pokémon data: $e')),
+  //     );
+  //   }
+  // }
+
+  Future<void> _fetchPokemonData() async {
+    try {
+      HttpClient httpClient = HttpClient();
+      IOClient ioClient = IOClient(httpClient);
+
+      final response =
+          await ioClient.get(Uri.parse('https://api.pokemontcg.io/v2/cards'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          _pokemonList = data['data'];
+        });
+      } else {
+        throw Exception(
+            'Failed to load Pokémon data: Status ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      print('⚠️ Error fetching Pokémon data: ${e.runtimeType} - $e');
+      print('📌 Stack trace: $stackTrace');
+      setState(() {
+        _pokemonList = [];
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching Pokémon data: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pokémon List'),
+      ),
+      body: _pokemonList.isEmpty
+          ? Center(child: CircularProgressIndicator())
+          : ListView.builder(
+              itemCount: _pokemonList.length,
+              itemBuilder: (context, index) {
+                final pokemon = _pokemonList[index];
+                return ListTile(
+                  title: Text(pokemon['name']),
+                  subtitle: Text(pokemon['supertype']),
+                  leading: Image.network(pokemon['images']['small']),
+                );
+              },
+            ),
+    );
   }
 }
 
