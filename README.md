@@ -21,7 +21,7 @@ The project is organized into several key components:
 The `models` directory contains the data models used in the application. These models represent the core entities such as Pokemon, Moves, and Battle.
 
 ### 2. Services
-The `services` directory includes the business logic and services that handle the core functionalities of the application, such as battle mechanics, move selection, and AI opponent logic.
+The `services` directory includes the logic that handle the core functionalities of the application, such as battle mechanics, move selection, and AI opponent logic.
 
 ### 3. UI
 The `ui` directory contains the user interface components of the application. This includes screens, widgets, and other UI elements that the user interacts with.
