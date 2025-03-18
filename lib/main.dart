@@ -91,6 +91,8 @@ class _MyHomePageState extends State<MyHomePage> {
         page = HangmanPage();
       case 6:
         page = PokemonListPage();
+      case 7:
+        page = PokemonBattlePage();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -131,6 +133,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     icon: Icon(Icons.list),
                     label: Text('Pokémon List'),
                   ),
+                  NavigationRailDestination(
+                    icon: Icon(Icons.sports_martial_arts),
+                    label: Text('Pokémon Battle'),
+                  ),
                 ],
                 selectedIndex: selectedIndex,
                 onDestinationSelected: (value) {
@@ -150,6 +156,121 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     });
+  }
+}
+
+class PokemonBattlePage extends StatefulWidget {
+  @override
+  _PokemonBattlePageState createState() => _PokemonBattlePageState();
+}
+
+class _PokemonBattlePageState extends State<PokemonBattlePage> {
+  Map<String, dynamic>? _pokemon1;
+  Map<String, dynamic>? _pokemon2;
+  String? _winner;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPokemonData();
+  }
+
+  Future<void> _fetchPokemonData() async {
+    try {
+      HttpClient httpClient = HttpClient();
+      IOClient ioClient = IOClient(httpClient);
+
+      final response =
+          await ioClient.get(Uri.parse('https://api.pokemontcg.io/v2/cards'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> pokemonList = data['data'];
+        final random = Random();
+        setState(() {
+          _pokemon1 = pokemonList[random.nextInt(pokemonList.length)];
+          _pokemon2 = pokemonList[random.nextInt(pokemonList.length)];
+          _determineWinner();
+        });
+      } else {
+        throw Exception(
+            'Failed to load Pokémon data: Status ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
+      print('⚠️ Error fetching Pokémon data: ${e.runtimeType} - $e');
+      print('📌 Stack trace: $stackTrace');
+      setState(() {
+        _pokemon1 = null;
+        _pokemon2 = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching Pokémon data: $e')),
+      );
+    }
+  }
+
+  void _determineWinner() {
+    if (_pokemon1 != null && _pokemon2 != null) {
+      int hp1 = int.tryParse(_pokemon1!['hp']) ?? 0;
+      int hp2 = int.tryParse(_pokemon2!['hp']) ?? 0;
+
+      if (hp1 > hp2) {
+        _winner = '${_pokemon1!['name']} wins!';
+      } else if (hp2 > hp1) {
+        _winner = '${_pokemon2!['name']} wins!';
+      } else {
+        _winner = 'It\'s a tie!';
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Pokémon Battle'),
+      ),
+      body: _pokemon1 == null || _pokemon2 == null
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildPokemonCard(_pokemon1!),
+                    _buildPokemonCard(_pokemon2!),
+                  ],
+                ),
+                SizedBox(height: 20),
+                Text(
+                  _winner ?? '',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildPokemonCard(Map<String, dynamic> pokemon) {
+    return Flexible(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 550,
+            height: 400,
+            child: Image.network(
+              pokemon['images']['large'],
+              fit: BoxFit.contain,
+            ),
+          ),
+          Text(pokemon['name'], style: TextStyle(fontSize: 24)),
+          Text('${pokemon['hp']} HP', style: TextStyle(fontSize: 18)),
+          Text(pokemon['supertype'], style: TextStyle(fontSize: 18)),
+        ],
+      ),
+    );
   }
 }
 
